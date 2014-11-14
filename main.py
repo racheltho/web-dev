@@ -33,6 +33,14 @@ form = """
 """
 
 
+class WelcomePage(webapp2.RequestHandler):
+
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        username = self.request.get('username')
+        self.response.out.write("Welcome, {}!".format(username))
+
+
 class MainPage(webapp2.RequestHandler):
 
     def write_form(self,
@@ -96,10 +104,10 @@ class MainPage(webapp2.RequestHandler):
         if error_dict & set(kwargs.keys()) != set():
             self.write_form(**kwargs)
         else:
-            self.response.out.write("You were successful, {}!".
-                                    format(username))
+            self.redirect("/welcome?username={}".format(username))
 
 
-app = webapp2.WSGIApplication([('/', MainPage)],
+app = webapp2.WSGIApplication([('/', MainPage),
+                              ('/welcome', WelcomePage)],
                               debug=True
                               )

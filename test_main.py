@@ -2,7 +2,16 @@ import webapp2
 import main
 
 
-class TestHandlers():
+class TestWelcomePage():
+
+    def test_get(self):
+        request = webapp2.Request.blank('/welcome?username=Rachel')
+        response = request.get_response(main.app)
+        assert response.status_code == 200
+        assert response.body == 'Welcome, Rachel!'
+
+
+class TestMainPage():
 
     def test_get(self):
         request = webapp2.Request.blank('/')
@@ -10,7 +19,7 @@ class TestHandlers():
         assert response.status_code == 200
         assert 'Username' in response.body
 
-    def test_post_successful(self):
+    def test_successful_post_redirects(self):
         params = {'username': 'rachel',
                   'password': '123',
                   'verify': '123',
@@ -18,8 +27,9 @@ class TestHandlers():
                   }
         request = webapp2.Request.blank('/', POST=params)
         response = request.get_response(main.app)
-        assert response.body == 'You were successful, rachel!'
-        assert response.status_code == 200
+        # import pytest; pytest.set_trace()
+        assert response.location == 'http://localhost/welcome?username=rachel'
+        assert response.status_code == 302
 
     def test_post_invalid(self):
         params = {'username': 'r',
