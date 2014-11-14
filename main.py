@@ -4,7 +4,14 @@ import cgi
 import validation
 
 form = """
+<head>
 <title>Awesome Signup</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/bootstrap-theme.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid">
+<br>
 <form method="post" action="/">
     <label>Username: <input name="username" value={username}></label>
     <div style="color: red">{username_error}</div><br>
@@ -18,8 +25,11 @@ form = """
     <div style="color: red">{verify_error}</div><br>
     <label>Email: <input name="email" value={email}></label>
     <div style="color: red">{email_error}</div><br>
-    <br><input type="submit">
+    <br><button type="submit" class="btn btn-default">Submit</button>
 </form>
+</div>
+<script src="/static/js/bootstrap.min.js"></script>
+</body>
 """
 
 
@@ -86,7 +96,8 @@ class MainPage(webapp2.RequestHandler):
         if error_dict & set(kwargs.keys()) != set():
             self.write_form(**kwargs)
         else:
-            self.response.out.write("You were successful, {}!".format(username))
+            self.response.out.write("You were successful, {}!".
+                                    format(username))
 
 
 app = webapp2.WSGIApplication([('/', MainPage)],
