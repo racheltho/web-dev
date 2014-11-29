@@ -8,7 +8,7 @@ class TestWelcomePage():
         request = webapp2.Request.blank('/welcome?username=Rachel')
         response = request.get_response(main.app)
         assert response.status_code == 200
-        assert response.body == 'Welcome, Rachel!'
+        assert 'Welcome, Rachel!' in response.body
 
 
 class TestMainPage():

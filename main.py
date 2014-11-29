@@ -1,69 +1,40 @@
 import webapp2
 import cgi
+import jinja2
+import os.path
 
 import validation
 
-form = """
-<head>
-<title>Awesome Signup</title>
-<link href="/static/css/bootstrap.min.css" rel="stylesheet">
-<link href="/static/css/bootstrap-theme.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container-fluid">
-<br>
-<form method="post" action="/">
-    <label>Username: <input name="username" value={username}></label>
-    <div style="color: red">{username_error}</div><br>
-    <label>Password:
-    <input type="password" name="password" value={password}>
-    </label>
-    <div style="color: red">{password_error}</div><br>
-    <label>Verify password:
-    <input type="password" name="verify" value={verify}>
-    </label>
-    <div style="color: red">{verify_error}</div><br>
-    <label>Email: <input name="email" value={email}></label>
-    <div style="color: red">{email_error}</div><br>
-    <br><button type="submit" class="btn btn-default">Submit</button>
-</form>
-</div>
-<script src="/static/js/bootstrap.min.js"></script>
-</body>
-"""
+
+template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir))
 
 
-class WelcomePage(webapp2.RequestHandler):
+class Handler(webapp2.RequestHandler):
+
+    def write(self, *args, **kwargs):
+        self.response.out.write(*args, **kwargs)
+
+    def render_str(self, template, **params):
+        t = jinja_env.get_template(template)
+        return t.render(params)
+
+    def render(self, template, **kwargs):
+        self.write(self.render_str(template, **kwargs))
+
+
+class WelcomePage(Handler):
+
+    def get(self):
+        kwargs = {'username': self.request.get('username')}
+        self.render("welcome.html", **kwargs)
+
+
+class MainPage(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        username = self.request.get('username')
-        self.response.out.write("Welcome, {}!".format(username))
-
-
-class MainPage(webapp2.RequestHandler):
-
-    def write_form(self,
-                   username="",
-                   email="",
-                   username_error="",
-                   password_error="",
-                   verify_error="",
-                   email_error=""
-                   ):
-        self.response.out.write(form.format(username=username,
-                                            email=email,
-                                            password="",
-                                            verify="",
-                                            username_error=username_error,
-                                            password_error=password_error,
-                                            verify_error=verify_error,
-                                            email_error=email_error,
-                                            ))
-
-    def get(self):
-        self.response.headers['Content-Type'] = 'text/html'
-        self.write_form()
+        self.render("input_form.html")
 
     def post(self):
 
@@ -102,12 +73,24 @@ class MainPage(webapp2.RequestHandler):
 
         # check if any error messages are in kwargs
         if error_dict & set(kwargs.keys()) != set():
-            self.write_form(**kwargs)
+            self.render("input_form.html", **kwargs)
         else:
             self.redirect("/welcome?username={}".format(username))
 
 
+class FizzBuzzPage(Handler):
+
+    def get(self):
+        n = self.request.get('n', 0)
+        try:
+            n = int(n)
+        except ValueError:
+            n = ""
+        self.render('fizzbuzz.html', n=n)
+
+
 app = webapp2.WSGIApplication([('/', MainPage),
-                              ('/welcome', WelcomePage)],
+                              ('/welcome', WelcomePage),
+                              ('/fizzbuzz', FizzBuzzPage)],
                               debug=True
                               )
