@@ -2,12 +2,21 @@ import webapp2
 import cgi
 import jinja2
 import os.path
+import datetime
+from google.appengine.ext import db
 
 import validation
 
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir))
+jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
+                               autoescape=True)
+
+
+class Art(db.Model):
+    title = db.StringProperty(required=True)
+    art = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
 
 
 class Handler(webapp2.RequestHandler):
@@ -30,11 +39,34 @@ class WelcomePage(Handler):
         self.render("welcome.html", **kwargs)
 
 
-class MainPage(Handler):
+class AsciiPage(Handler):
+
+    def render_ascii(self, title="", art="", error=""):
+        arts = db.GqlQuery("SELECT * FROM Art "
+                           "ORDER BY created DESC")
+        self.render("ascii.html", title=title, art=art, error=error, arts=arts)
+
+    def get(self):
+        self.render_ascii()
+
+    def post(self):
+        title = self.request.get('title')
+        art = self.request.get('art')
+
+        if title and art:
+            new_art = Art(title=title, art=art)
+            new_art.put()
+            self.redirect("/")
+        else:
+            error = "we need both a title and artwork!"
+            self.render_ascii(title=title, art=art, error=error)
+
+
+class SignupPage(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        self.render("input_form.html")
+        self.render("signup.html")
 
     def post(self):
 
@@ -73,7 +105,7 @@ class MainPage(Handler):
 
         # check if any error messages are in kwargs
         if error_dict & set(kwargs.keys()) != set():
-            self.render("input_form.html", **kwargs)
+            self.render("signup.html", **kwargs)
         else:
             self.redirect("/welcome?username={}".format(username))
 
@@ -89,7 +121,8 @@ class FizzBuzzPage(Handler):
         self.render('fizzbuzz.html', n=n)
 
 
-app = webapp2.WSGIApplication([('/', MainPage),
+app = webapp2.WSGIApplication([('/', AsciiPage),
+                              ('/signup', SignupPage),
                               ('/welcome', WelcomePage),
                               ('/fizzbuzz', FizzBuzzPage)],
                               debug=True
