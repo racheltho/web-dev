@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Blog Main Page</h1>
+<hr>
+<form action="/blog/newpost">
+    <br><button class="btn btn-default">Create New Post</button>
+</form>
+<hr>
+<h4>Archives</h4>
+<div>
+<table class="table table-bordered table-striped">
+{% for blog in blog_posts %}
+    <tr>
+        <td><a href="{{"/blog/"}}{{blog.key().id()}}">{{blog.subject}}</a></td>
+        <td>{{blog.created}}</a></td>
+    </tr>
+{% endfor %}
+</table>    
+
+
+{% endblock %}

@@ -3,7 +3,7 @@
 
 <h1>/ascii/</h1>
 
-<form method="post" action="/">
+<form method="post" action="/ascii">
     <label>
         <div>title</div>
         <input type="text" name="title" value={{title}}>
@@ -20,6 +20,7 @@
 {% for art in arts %}
 <div class="art">
     <div class="art-title">{{art.title}}</div>
+    <div>{{art.key().id()}}</div>
     <pre class="art-body">{{art.art}}</div></pre>
 </div>
 {% endfor %}

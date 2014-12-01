@@ -2,7 +2,6 @@ import webapp2
 import cgi
 import jinja2
 import os.path
-import datetime
 from google.appengine.ext import db
 
 import validation
@@ -16,6 +15,12 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
 class Art(db.Model):
     title = db.StringProperty(required=True)
     art = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+
+
+class Blog(db.Model):
+    subject = db.StringProperty(required=True)
+    content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
 
 
@@ -39,6 +44,49 @@ class WelcomePage(Handler):
         self.render("welcome.html", **kwargs)
 
 
+class BlogMainPage(Handler):
+
+    def render_blog_main_page(self):
+        blog_posts = db.GqlQuery("SELECT * FROM Blog "
+                                 "ORDER BY created DESC")
+        self.render("blog.html", blog_posts=blog_posts)
+
+    def get(self):
+        self.render_blog_main_page()
+
+
+class NewPostPage(Handler):
+
+    def render_new_post(self, subject="", content="", error=""):
+        self.render("newpost.html",
+                    subject=subject,
+                    content=content,
+                    error=error
+                    )
+
+    def get(self):
+        self.render_new_post()
+
+    def post(self):
+        subject = self.request.get('subject')
+        content = self.request.get('content')
+
+        if subject and content:
+            new_blog_post = Blog(subject=subject, content=content)
+            new_blog_post.put()
+            self.redirect("/blog/"+str(new_blog_post.key().id()))
+        else:
+            error = "we need both a subject and content!"
+            self.render_new_post(subject=subject, content=content, error=error)
+
+
+class PermalinkPage(Handler):
+
+    def get(self, blog_id):
+        blog = Blog.get_by_id(int(blog_id))
+        self.render("permalink.html", blog=blog)
+
+
 class AsciiPage(Handler):
 
     def render_ascii(self, title="", art="", error=""):
@@ -56,7 +104,7 @@ class AsciiPage(Handler):
         if title and art:
             new_art = Art(title=title, art=art)
             new_art.put()
-            self.redirect("/")
+            self.redirect("/ascii")
         else:
             error = "we need both a title and artwork!"
             self.render_ascii(title=title, art=art, error=error)
@@ -110,20 +158,11 @@ class SignupPage(Handler):
             self.redirect("/welcome?username={}".format(username))
 
 
-class FizzBuzzPage(Handler):
-
-    def get(self):
-        n = self.request.get('n', 0)
-        try:
-            n = int(n)
-        except ValueError:
-            n = ""
-        self.render('fizzbuzz.html', n=n)
-
-
-app = webapp2.WSGIApplication([('/', AsciiPage),
+app = webapp2.WSGIApplication([('/blog', BlogMainPage),
+                              ('/blog/newpost', NewPostPage),
+                              ('/blog/(\d+)', PermalinkPage),
+                              ('/ascii', AsciiPage),
                               ('/signup', SignupPage),
-                              ('/welcome', WelcomePage),
-                              ('/fizzbuzz', FizzBuzzPage)],
+                              ('/welcome', WelcomePage)],
                               debug=True
                               )
