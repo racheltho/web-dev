@@ -1,4 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
     <h2> Welcome, {{username}}! </h2>
+    <br><br><br>
+<form action="/blog/logout">
+    <button class="btn btn-default">Log out</button>
+</form>
+
 {% endblock %}

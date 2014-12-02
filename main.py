@@ -27,7 +27,17 @@ class Blog(db.Model):
 class User(db.Model):
     username = db.StringProperty(required=True)
     password_hash_salt = db.StringProperty(required=True)
-    email = db.StringProperty(required=True)
+    email = db.StringProperty()
+
+
+# returns user_id given a valid username and password
+def user_id_from_username_password(username, password):
+    user = db.GqlQuery("SELECT * FROM User "
+                        "WHERE username = '{}'".format(username)).get()
+    if user:
+        h = user.password_hash_salt
+        if hashing.valid_pw(username, password, h):
+            return user.key().id()
 
 
 def username_not_taken(username):
@@ -50,6 +60,24 @@ class Handler(webapp2.RequestHandler):
         self.write(self.render_str(template, **kwargs))
 
 
+class Main2(Handler):
+    def get(self):
+        import sys
+        import os.path
+        # add `lib` subdirectory to `sys.path`, so our `main` module can load
+        # third-party libraries.
+        path1 = os.path
+        path2 = sys.path
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
+        path3 = os.path
+        path4 = sys.path
+        self.render("test.html",
+                    path1=path1,
+                    path2=path2,
+                    path3=path3,
+                    path4=path4)
+
+
 class SignupPage(Handler):
 
     def get(self):
@@ -69,7 +97,9 @@ class SignupPage(Handler):
         valid_username = validation.valid_username(username)
         valid_password = validation.valid_password(password)
         valid_verify = (verify == password)
-        valid_email = validation.valid_email(email)
+        valid_email = True
+        if email:
+            valid_email = validation.valid_email(email)
 
         kwargs['username'] = username
         kwargs['email'] = email
@@ -113,6 +143,42 @@ class SignupPage(Handler):
                                              'user_id={}; '
                                              'Path=/'.format(hashed_cookie))
             self.redirect("/blog/welcome")
+
+
+class LoginPage(Handler):
+
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        self.render("login.html")
+
+    def post(self):
+
+        kwargs = {}
+
+        username = self.request.get('username')
+        password = self.request.get('password')
+
+        user_id = user_id_from_username_password(username, password)
+
+        kwargs['username'] = username
+
+        if not user_id:
+            kwargs['invalid'] = "Invalid Login"
+            self.render("login.html", **kwargs)
+        else:
+            # create cookie useing hashed id
+            hashed_cookie = hashing.make_secure_val(user_id)
+            self.response.headers.add_header('Set-Cookie',
+                                             'user_id={}; '
+                                             'Path=/'.format(hashed_cookie))
+            self.redirect("/blog/welcome")
+
+
+class LogoutPage(Handler):
+
+    def get(self):
+        self.response.delete_cookie('user_id')
+        self.redirect('/blog/signup')
 
 
 class WelcomePage(Handler):
@@ -217,9 +283,11 @@ class AsciiPage(Handler):
 app = webapp2.WSGIApplication([('/blog', BlogMainPage),
                               ('/blog/newpost', NewPostPage),
                               ('/blog/(\d+)', PermalinkPage),
-                              ('/', MainPage),
+                              ('/', Main2),
                               ('/ascii', AsciiPage),
                               ('/blog/signup', SignupPage),
+                              ('/blog/login', LoginPage),
+                              ('/blog/logout', LogoutPage),
                               ('/blog/welcome', WelcomePage)],
                               debug=True
                               )

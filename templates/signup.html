@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<h3>New users:</h3>
 <form method="post" action="/blog/signup">
     <label>Username: <input name="username" value={{username}}></label>
     <div style="color: red">{{username_exists}} {{username_error}}</div><br>
@@ -12,7 +13,12 @@
     </label>
     <div style="color: red">{{verify_error}}</div><br>
     <label>Email: <input name="email" value={{email}}></label>
-    <div style="color: red">{{email_error}}</div><br>
-    <br><button type="submit" class="btn btn-default">Submit</button>
+    <div style="color: red">{{email_error}}</div>
+    <br><button type="submit" class="btn btn-default">Sign up</button>
+</form>
+<hr>
+<h3>Returning users:</h3>
+<form action="/blog/login">
+    <button class="btn btn-default">Login</button>
 </form>
 {% endblock %}
