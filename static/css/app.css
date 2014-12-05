@@ -1,0 +1,22 @@
+.map{
+    position: absolute;
+    right: 0;
+    padding: 5px;
+    top: 112px;
+}
+
+.error{
+    color: red
+}
+
+.ascii_input{
+    width: 400px;
+    padding: 2px;
+}
+
+.ascii_textarea{
+    width: 400px;
+    height: 200px;
+    font-size: 17px;
+    font-family: monospace;
+}

@@ -2,6 +2,8 @@ import webapp2
 import jinja2
 import os.path
 from google.appengine.ext import db
+import urllib2
+from xml.dom import minidom
 
 import validation
 import hashing
@@ -12,10 +14,39 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
 
+IP_URL = "http://api.hostip.info/?ip="
+GMAPS_URL = "http://maps.googleapis.com/maps/api/staticmap?size=380x263&sensor=false&"
+
+
+def get_coords(ip):
+    # ip = "203.26.235.14"
+    ip = "4.2.2.2"
+    url = IP_URL + ip
+    content = None
+    try:
+        content = urllib2.urlopen(url).read()
+    except urllib2.URLError:
+        return
+    if content:
+        xml = minidom.parseString(content)
+        xml_coords = xml.getElementsByTagName("gml:coordinates")
+        if xml_coords:
+            child = xml_coords[0].childNodes
+            if child:
+                lon, lat = child[0].nodeValue.split(",")
+                return db.GeoPt(lat, lon)
+
+
+def gmaps_img(points):
+    markers = "&".join("markers={},{}".format(p.lat, p.lon) for p in points)
+    return GMAPS_URL + markers
+
+
 class Art(db.Model):
     title = db.StringProperty(required=True)
     art = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
+    coords = db.GeoPtProperty()
 
 
 class Blog(db.Model):
@@ -28,12 +59,13 @@ class User(db.Model):
     username = db.StringProperty(required=True)
     password_hash_salt = db.StringProperty(required=True)
     email = db.StringProperty()
+    coords = db.GeoPtProperty()
 
 
 # returns user_id given a valid username and password
 def user_id_from_username_password(username, password):
     user = db.GqlQuery("SELECT * FROM User "
-                        "WHERE username = '{}'".format(username)).get()
+                       "WHERE username = '{}'".format(username)).get()
     if user:
         h = user.password_hash_salt
         if hashing.valid_pw(username, password, h):
@@ -134,6 +166,10 @@ class SignupPage(Handler):
                             password_hash_salt=password_hash_salt,
                             email=email
                             )
+            # use ip address to find lat/lon
+            coords = get_coords(self.request.remote_addr)
+            if coords:
+                new_user.coords = coords
             n = new_user.put()
             user_id = n.id()
 
@@ -185,12 +221,20 @@ class WelcomePage(Handler):
 
     def get(self):
         hashed_user_id = self.request.cookies.get('user_id')
-        kwargs = {}
         if hashed_user_id:
             user_id = hashing.check_secure_val(hashed_user_id)
             try:
                 user = User.get_by_id(int(user_id))
-                self.render("welcome.html", username=user.username)
+                self.response.headers['Content-Type'] = 'text/html'
+                users = db.GqlQuery("SELECT * FROM User ")
+                users = list(users)
+                coordinates = filter(None, (a.coords for a in users))
+                img_url = None
+                if coordinates:
+                    img_url = gmaps_img(coordinates)
+
+                self.render("welcome.html", username=user.username,
+                            img_url=img_url)
             except TypeError:
                 self.redirect("/blog/signup")
         else:
@@ -261,10 +305,19 @@ class AsciiPage(Handler):
 
     def render_ascii(self, title="", art="", error=""):
         arts = db.GqlQuery("SELECT * FROM Art "
-                           "ORDER BY created DESC")
-        self.render("ascii.html", title=title, art=art, error=error, arts=arts)
+                           "ORDER BY created DESC "
+                           "LIMIT 10")
+        arts = list(arts)
+        coordinates = filter(None, (a.coords for a in arts))
+        img_url = None
+        if coordinates:
+            img_url = gmaps_img(coordinates)
+
+        self.render("ascii.html", title=title, art=art, error=error, arts=arts,
+                    img_url=img_url)
 
     def get(self):
+        # self.write(repr(get_coords(self.request.remote_addr)))
         self.render_ascii()
 
     def post(self):
@@ -273,6 +326,9 @@ class AsciiPage(Handler):
 
         if title and art:
             new_art = Art(title=title, art=art)
+            coords = get_coords(self.request.remote_addr)
+            if coords:
+                new_art.coords = coords
             new_art.put()
             self.redirect("/ascii")
         else:

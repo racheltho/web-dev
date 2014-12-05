@@ -6,21 +6,23 @@
 <form method="post" action="/ascii">
     <label>
         <div>title</div>
-        <input type="text" name="title" value={{title}}>
+        <input class="ascii_input" type="text" name="title" value={{title}}>
     </label>
     <br>
     <label>
         <div>art</div>
-        <textarea name="art">{{art}}</textarea>
+        <textarea class="ascii_textarea" name="art">{{art}}</textarea>
     </label>
-    <div class="error" style="color: red">{{error}}</div><br>
+    <div class="error">{{error}}</div><br>
     <br><button type="submit" class="btn btn-default">Submit</button>
 </form>
+{% if img_url %}
+    <img class="map" src="{{img_url}}">
+{% endif %}
 <hr>
 {% for art in arts %}
 <div class="art">
     <div class="art-title">{{art.title}}</div>
-    <div>{{art.key().id()}}</div>
     <pre class="art-body">{{art.art}}</div></pre>
 </div>
 {% endfor %}
