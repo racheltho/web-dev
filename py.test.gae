@@ -1,0 +1,13 @@
+#!/usr/local/opt/python/bin/python2.7
+# EASY-INSTALL-ENTRY-SCRIPT: 'pytest==2.6.4','console_scripts','py.test'
+__requires__ = 'pytest==2.6.4'
+import sys
+from pkg_resources import load_entry_point
+
+if __name__ == '__main__':
+    sys.path.insert(0, '/usr/local/google_appengine')
+    import dev_appserver 
+    dev_appserver.fix_sys_path()
+    sys.exit(
+        load_entry_point('pytest==2.6.4', 'console_scripts', 'py.test')()
+    )

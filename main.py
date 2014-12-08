@@ -5,78 +5,19 @@ from google.appengine.ext import db
 import urllib2
 from xml.dom import minidom
 
+from models import (Art,
+                    Blog,
+                    User,
+                    user_id_from_username_password,
+                    username_not_taken)
 import validation
 import hashing
+import geo
 
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
-
-
-IP_URL = "http://api.hostip.info/?ip="
-GMAPS_URL = "http://maps.googleapis.com/maps/api/staticmap?size=380x263&sensor=false&"
-
-
-def get_coords(ip):
-    # ip = "203.26.235.14"
-    ip = "4.2.2.2"
-    url = IP_URL + ip
-    content = None
-    try:
-        content = urllib2.urlopen(url).read()
-    except urllib2.URLError:
-        return
-    if content:
-        xml = minidom.parseString(content)
-        xml_coords = xml.getElementsByTagName("gml:coordinates")
-        if xml_coords:
-            child = xml_coords[0].childNodes
-            if child:
-                lon, lat = child[0].nodeValue.split(",")
-                return db.GeoPt(lat, lon)
-
-
-def gmaps_img(points):
-    markers = "&".join("markers={},{}".format(p.lat, p.lon) for p in points)
-    return GMAPS_URL + markers
-
-
-class Art(db.Model):
-    title = db.StringProperty(required=True)
-    art = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    coords = db.GeoPtProperty()
-
-
-class Blog(db.Model):
-    subject = db.StringProperty(required=True)
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-
-
-class User(db.Model):
-    username = db.StringProperty(required=True)
-    password_hash_salt = db.StringProperty(required=True)
-    email = db.StringProperty()
-    coords = db.GeoPtProperty()
-
-
-# returns user_id given a valid username and password
-def user_id_from_username_password(username, password):
-    user = db.GqlQuery("SELECT * FROM User "
-                       "WHERE username = '{}'".format(username)).get()
-    if user:
-        h = user.password_hash_salt
-        if hashing.valid_pw(username, password, h):
-            return user.key().id()
-
-
-def username_not_taken(username):
-    query = db.GqlQuery("SELECT * FROM User "
-                        "WHERE username = '{}'".format(username))
-    if not query.get():
-        return True
 
 
 class Handler(webapp2.RequestHandler):
@@ -90,24 +31,6 @@ class Handler(webapp2.RequestHandler):
 
     def render(self, template, **kwargs):
         self.write(self.render_str(template, **kwargs))
-
-
-class Main2(Handler):
-    def get(self):
-        import sys
-        import os.path
-        # add `lib` subdirectory to `sys.path`, so our `main` module can load
-        # third-party libraries.
-        path1 = os.path
-        path2 = sys.path
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-        path3 = os.path
-        path4 = sys.path
-        self.render("test.html",
-                    path1=path1,
-                    path2=path2,
-                    path3=path3,
-                    path4=path4)
 
 
 class SignupPage(Handler):
@@ -167,7 +90,7 @@ class SignupPage(Handler):
                             email=email
                             )
             # use ip address to find lat/lon
-            coords = get_coords(self.request.remote_addr)
+            coords = geo.get_coords(self.request.remote_addr)
             if coords:
                 new_user.coords = coords
             n = new_user.put()
@@ -231,7 +154,7 @@ class WelcomePage(Handler):
                 coordinates = filter(None, (a.coords for a in users))
                 img_url = None
                 if coordinates:
-                    img_url = gmaps_img(coordinates)
+                    img_url = geo.gmaps_img(coordinates)
 
                 self.render("welcome.html", username=user.username,
                             img_url=img_url)
@@ -311,7 +234,7 @@ class AsciiPage(Handler):
         coordinates = filter(None, (a.coords for a in arts))
         img_url = None
         if coordinates:
-            img_url = gmaps_img(coordinates)
+            img_url = geo.gmaps_img(coordinates)
 
         self.render("ascii.html", title=title, art=art, error=error, arts=arts,
                     img_url=img_url)
@@ -326,7 +249,7 @@ class AsciiPage(Handler):
 
         if title and art:
             new_art = Art(title=title, art=art)
-            coords = get_coords(self.request.remote_addr)
+            coords = geo.get_coords(self.request.remote_addr)
             if coords:
                 new_art.coords = coords
             new_art.put()
@@ -339,7 +262,7 @@ class AsciiPage(Handler):
 app = webapp2.WSGIApplication([('/blog', BlogMainPage),
                               ('/blog/newpost', NewPostPage),
                               ('/blog/(\d+)', PermalinkPage),
-                              ('/', Main2),
+                              ('/', MainPage),
                               ('/ascii', AsciiPage),
                               ('/blog/signup', SignupPage),
                               ('/blog/login', LoginPage),

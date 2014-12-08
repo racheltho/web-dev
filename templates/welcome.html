@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
     <h2> Welcome, {{username}}! </h2>
+    {% if img_url %}
     <br>
     We have users around the world in these awesome locations:
     <br>
-    {% if img_url %}
     <img src="{{img_url}}">
     {% endif %}
     <br><br>
