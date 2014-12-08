@@ -1,6 +1,6 @@
 import webapp2
 import jinja2
-import os.path
+import os
 from google.appengine.ext import db
 import urllib2
 from xml.dom import minidom
@@ -93,6 +93,11 @@ class SignupPage(Handler):
             coords = geo.get_coords(self.request.remote_addr)
             if coords:
                 new_user.coords = coords
+            coords = geo.get_coords(self.request.remote_addr)
+            # if coords:
+            #    new_user.lat, new_user.lon = float(coords[0]), float(coords[1])
+            # new_user.ip = self.request.remote_addr
+            # new_user.server_software = os.environ['SERVER_SOFTWARE']
             n = new_user.put()
             user_id = n.id()
 
