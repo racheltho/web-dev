@@ -33,7 +33,7 @@ class Handler(webapp2.RequestHandler):
         self.write(self.render_str(template, **kwargs))
 
 
-class SignupPage(Handler):
+class SignupHandler(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
@@ -109,7 +109,7 @@ class SignupPage(Handler):
             self.redirect("/blog/welcome")
 
 
-class LoginPage(Handler):
+class LoginHandler(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
@@ -138,14 +138,14 @@ class LoginPage(Handler):
             self.redirect("/blog/welcome")
 
 
-class LogoutPage(Handler):
+class LogoutHandler(Handler):
 
     def get(self):
         self.response.delete_cookie('user_id')
         self.redirect('/blog/signup')
 
 
-class WelcomePage(Handler):
+class WelcomeHandler(Handler):
 
     def get(self):
         hashed_user_id = self.request.cookies.get('user_id')
@@ -169,7 +169,7 @@ class WelcomePage(Handler):
             self.redirect("/blog/signup")
 
 
-class BlogMainPage(Handler):
+class BlogMainHandler(Handler):
 
     def render_blog_main_page(self):
         blog_posts = db.GqlQuery("SELECT * FROM Blog "
@@ -180,7 +180,7 @@ class BlogMainPage(Handler):
         self.render_blog_main_page()
 
 
-class NewPostPage(Handler):
+class NewPostHandler(Handler):
 
     def render_new_post(self, subject="", content="", error=""):
         self.render("newpost.html",
@@ -205,14 +205,14 @@ class NewPostPage(Handler):
             self.render_new_post(subject=subject, content=content, error=error)
 
 
-class PermalinkPage(Handler):
+class PermalinkHandler(Handler):
 
     def get(self, blog_id):
         blog = Blog.get_by_id(int(blog_id))
         self.render("permalink.html", blog=blog)
 
 
-class MainPage(Handler):
+class MainHandler(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
@@ -229,7 +229,7 @@ class MainPage(Handler):
             self.write("You've been here {} times!".format(visits))
 
 
-class AsciiPage(Handler):
+class AsciiHandler(Handler):
 
     def render_ascii(self, title="", art="", error=""):
         arts = db.GqlQuery("SELECT * FROM Art "
@@ -264,14 +264,14 @@ class AsciiPage(Handler):
             self.render_ascii(title=title, art=art, error=error)
 
 
-app = webapp2.WSGIApplication([('/blog', BlogMainPage),
-                              ('/blog/newpost', NewPostPage),
-                              ('/blog/(\d+)', PermalinkPage),
-                              ('/', MainPage),
-                              ('/ascii', AsciiPage),
-                              ('/blog/signup', SignupPage),
-                              ('/blog/login', LoginPage),
-                              ('/blog/logout', LogoutPage),
-                              ('/blog/welcome', WelcomePage)],
+app = webapp2.WSGIApplication([('/blog', BlogMainHandler),
+                              ('/blog/newpost', NewPostHandler),
+                              ('/blog/(\d+)', PermalinkHandler),
+                              ('/', MainHandler),
+                              ('/ascii', AsciiHandler),
+                              ('/blog/signup', SignupHandler),
+                              ('/blog/login', LoginHandler),
+                              ('/blog/logout', LogoutHandler),
+                              ('/blog/welcome', WelcomeHandler)],
                               debug=True
                               )

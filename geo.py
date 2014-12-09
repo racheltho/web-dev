@@ -10,7 +10,10 @@ GMAPS_URL = "http://maps.googleapis.com/maps/api/staticmap?size=380x263&sensor=f
 
 
 def is_development_env():
-    return os.environ['SERVER_SOFTWARE'].startswith('Development')
+    try:
+        return os.environ['SERVER_SOFTWARE'].startswith('Development')
+    except KeyError:
+        pass
 
 
 def get_coords(ip):

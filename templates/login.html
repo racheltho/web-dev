@@ -15,7 +15,13 @@
                  <input class="form-control" name="password" id="pw" type="password" value={{password}}>
             </div>
         </div>
-        <div class="form-group error">{{invalid}}</div>
+        {% if invalid %}
+        <div class="form-group has-error">
+        {% else %}
+        <div class="form-group">
+        {% endif %}
+                <span class="col-sm-offset-3 col-sm-4 help-block">{{invalid}}</span>
+        </div>
         <div class="form-group">
             <div class="col-sm-offset-3 col-sm-4">
                 <button class="btn btn-default" type="submit">Login</button>

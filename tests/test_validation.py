@@ -1,9 +1,10 @@
+import unittest
 from validation import (valid_username,
                         valid_password,
                         valid_email)
 
 
-class TestValidation:
+class TestValidation(unittest.TestCase):
     def test_valid_username(self):
         assert valid_username('rachel_thomas')
 

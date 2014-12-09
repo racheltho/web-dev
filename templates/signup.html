@@ -2,33 +2,49 @@
 {% block content %}
 <h3>New users:</h3>
 <form class="form-horizontal" method="post" action="/blog/signup" role="form">
+    {% if username_error or username_exists %} 
+    <div class="form-group has-error">
+    {% else %}
     <div class="form-group">
+    {% endif %}
         <label class="col-sm-3 control-label" for="name">Username:</label>
         <div class="col-sm-4">
             <input class="form-control" name="username" id="name" value={{username}}>
         </div>
-        <div class="error">{{username_exists}} {{username_error}}</div><br>
+        <span class="help-block"> {{username_exists}} {{username_error}}</span><br>
     </div>
+    {% if password_error %} 
+    <div class="form-group has-error">
+    {% else %}
     <div class="form-group">
+    {% endif %}
         <label class="col-sm-3 control-label" for="pw">Password:</label>
         <div class="col-sm-4">
             <input class="form-control" type="password" id="pw" name="password" value={{password}}>
         </div>
-        <div class="error">{{password_error}}</div><br>
+        <span class="help-block">{{password_error}}</span><br>
     </div>
+    {% if verify_error %} 
+    <div class="form-group has-error">
+    {% else %}
     <div class="form-group">
+    {% endif %}
         <label class="col-sm-3 control-label" for="verify">Verify password:</label>
         <div class="col-sm-4">
             <input class="form-control" type="password" id="verify" name="verify" value={{verify}}>
         </div>
-        <div class="error">{{verify_error}}</div><br>
+        <span class="help-block">{{verify_error}}</span><br>
     </div>
+    {% if email_error %} 
+    <div class="form-group has-error">
+    {% else %}
     <div class="form-group">
+    {% endif %}
         <label class="col-sm-3 control-label" for="email">Email:</label>
         <div class="col-sm-4">
             <input class="form-control" name="email" id="email" value={{email}}>
         </div>
-        <div class="error">{{email_error}}</div>
+        <span class="help-block">{{email_error}}</span>
     </div>
     <div class="form-group">
          <div class="col-sm-offset-2 col-sm-4">

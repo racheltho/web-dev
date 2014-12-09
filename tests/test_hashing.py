@@ -1,3 +1,4 @@
+import unittest
 from hashing import (hash_str,
                      make_secure_val,
                      check_secure_val,
@@ -7,7 +8,7 @@ from hashing import (hash_str,
 from secret import SECRET
 
 
-class TestHashing:
+class TestHashing(unittest.TestCase):
     def test_hash_str(self):
         HASH = "cea6b92de1c15cfdbcf333982d340d3f"
         assert hash_str("test") == HASH
