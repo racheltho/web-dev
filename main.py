@@ -2,14 +2,11 @@ import webapp2
 import jinja2
 import os
 from google.appengine.ext import db
-import urllib2
-from xml.dom import minidom
+import json
 
 from models import (Art,
                     Blog,
-                    User,
-                    user_id_from_username_password,
-                    username_not_taken)
+                    User)
 import validation
 import hashing
 import geo
@@ -48,7 +45,7 @@ class SignupHandler(Handler):
         verify = self.request.get('verify')
         email = self.request.get('email')
 
-        new_username = username_not_taken(username)
+        new_username = User.username_not_taken(username)
         valid_username = validation.valid_username(username)
         valid_password = validation.valid_password(password)
         valid_verify = (verify == password)
@@ -94,10 +91,6 @@ class SignupHandler(Handler):
             if coords:
                 new_user.coords = coords
             coords = geo.get_coords(self.request.remote_addr)
-            # if coords:
-            #    new_user.lat, new_user.lon = float(coords[0]), float(coords[1])
-            # new_user.ip = self.request.remote_addr
-            # new_user.server_software = os.environ['SERVER_SOFTWARE']
             n = new_user.put()
             user_id = n.id()
 
@@ -122,7 +115,7 @@ class LoginHandler(Handler):
         username = self.request.get('username')
         password = self.request.get('password')
 
-        user_id = user_id_from_username_password(username, password)
+        user_id = User.user_id_from_username_password(username, password)
 
         kwargs['username'] = username
 
@@ -178,6 +171,26 @@ class BlogMainHandler(Handler):
 
     def get(self):
         self.render_blog_main_page()
+
+
+class BlogJSONHandler(Handler):
+
+    def get(self):
+        self.response.headers['Content-Type'] = 'application/json'
+        blog_posts = db.GqlQuery("SELECT * FROM Blog "
+                                 "ORDER BY created DESC")
+        blog_posts = list(blog_posts)
+        blog_json = [Blog.get_json(b) for b in blog_posts]
+        self.write(json.dumps(blog_json))
+
+
+class PermalinkJSONHandler(Handler):
+
+    def get(self, blog_id):
+        self.response.headers['Content-Type'] = 'application/json'
+        blog = Blog.get_by_id(int(blog_id))
+        blog_json = Blog.get_json(blog)
+        self.write(json.dumps(blog_json))
 
 
 class NewPostHandler(Handler):
@@ -264,9 +277,11 @@ class AsciiHandler(Handler):
             self.render_ascii(title=title, art=art, error=error)
 
 
-app = webapp2.WSGIApplication([('/blog', BlogMainHandler),
+app = webapp2.WSGIApplication([('/blog/?', BlogMainHandler),
                               ('/blog/newpost', NewPostHandler),
                               ('/blog/(\d+)', PermalinkHandler),
+                              ('/blog/(\d+)/?\.json', PermalinkJSONHandler),
+                              ('/blog/?\.json', BlogJSONHandler),
                               ('/', MainHandler),
                               ('/ascii', AsciiHandler),
                               ('/blog/signup', SignupHandler),
