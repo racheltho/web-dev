@@ -1,20 +1,21 @@
-{% extends "base.html" %}
+{% extends "base_nav.html" %}
 {% block content %}
 
 <h1>Create a new post:</h1>
 
-<form method="post">
-    <label>
-        <div>Subject</div>
-        <input type="text" name="subject" value={{subject}}>
-    </label>
-    <br>
-    <label>
-        <div>Content</div>
-        <textarea name="content" style="width: 500px; height: 400px">{{content}}</textarea>
-    </label>
-    <div class="error">{{error}}</div><br>
-    <br><button type="submit" class="btn btn-default">Submit</button>
+<form method="post" role="form">
+    <div class="form-group">
+        <label for="subject">Subject</label>
+        <input class="form-control" type="text" id="subject" name="subject" value={{subject}}>
+    </div>
+    <div class="form-group">
+        <label for="content">Content</label>
+        <textarea class="form-control" name="content" rows="12" id="content">{{content}}</textarea>
+    </div>
+    {% if error %}
+    <div class="form-group has-error"><span class="help-block">{{error}}</span></div>
+    {% endif %}     
+   <button type="submit" class="btn btn-default">Submit</button>
 </form>
 <hr>
 {% endblock %}

@@ -1,24 +1,22 @@
-{% extends "base.html" %}
+{% extends "base_nav.html" %}
 {% block content %}
 
-<h1>/ascii/</h1>
+<h1>Ascii Art</h1>
 
 <form method="post" action="/ascii">
-    <label>
-        <div>title</div>
-        <input class="ascii_input" type="text" name="title" value={{title}}>
-    </label>
-    <br>
-    <label>
-        <div>art</div>
-        <textarea class="ascii_textarea" name="art">{{art}}</textarea>
-    </label>
-    <div class="error">{{error}}</div><br>
-    <br><button type="submit" class="btn btn-default">Submit</button>
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input class="form-control" type="text" id="title" name="title" value={{title}}>
+    </div>
+    <div class="form-group">
+        <label>Art</label>
+        <textarea class="form-control" name="art" rows="10" id="title">{{art}}</textarea>
+    </div>
+    {% if error %}
+    <div class="form-group has-error"><span class="help-block">{{error}}</span></div>
+    {% endif %}
+    <button type="submit" class="btn btn-default">Submit</button>
 </form>
-{% if img_url %}
-    <img class="map" src="{{img_url}}">
-{% endif %}
 <hr>
 {% for art in arts %}
 <div class="art">

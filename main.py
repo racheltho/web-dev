@@ -29,6 +29,18 @@ class Handler(webapp2.RequestHandler):
     def render(self, template, **kwargs):
         self.write(self.render_str(template, **kwargs))
 
+    # only render page if valid user_id cookie exists
+    # otherwise redirect to signup page
+    def render_secure(self, template, **kwargs):
+        hashed_user_id = self.request.cookies.get('user_id')
+        try:
+            if hashed_user_id and hashing.check_secure_val(hashed_user_id):
+                self.write(self.render_str(template, **kwargs))
+            else:
+                self.redirect("/blog/login")
+        except ValueError:
+            self.redirect("/blog/login")
+
 
 class SignupHandler(Handler):
 
@@ -94,7 +106,7 @@ class SignupHandler(Handler):
             n = new_user.put()
             user_id = n.id()
 
-            # create cookie useing hashed id
+            # create cookie using hashed id
             hashed_cookie = hashing.make_secure_val(user_id)
             self.response.headers.add_header('Set-Cookie',
                                              'user_id={}; '
@@ -135,7 +147,7 @@ class LogoutHandler(Handler):
 
     def get(self):
         self.response.delete_cookie('user_id')
-        self.redirect('/blog/signup')
+        self.redirect('/blog/login')
 
 
 class WelcomeHandler(Handler):
@@ -157,9 +169,9 @@ class WelcomeHandler(Handler):
                 self.render("welcome.html", username=user.username,
                             img_url=img_url)
             except TypeError:
-                self.redirect("/blog/signup")
+                self.redirect("/blog/login")
         else:
-            self.redirect("/blog/signup")
+            self.redirect("/blog/login")
 
 
 class BlogMainHandler(Handler):
@@ -167,7 +179,7 @@ class BlogMainHandler(Handler):
     def render_blog_main_page(self):
         blog_posts = db.GqlQuery("SELECT * FROM Blog "
                                  "ORDER BY created DESC")
-        self.render("blog.html", blog_posts=blog_posts)
+        self.render_secure("blog.html", blog_posts=blog_posts)
 
     def get(self):
         self.render_blog_main_page()
@@ -196,11 +208,11 @@ class PermalinkJSONHandler(Handler):
 class NewPostHandler(Handler):
 
     def render_new_post(self, subject="", content="", error=""):
-        self.render("newpost.html",
-                    subject=subject,
-                    content=content,
-                    error=error
-                    )
+        self.render_secure("newpost.html",
+                           subject=subject,
+                           content=content,
+                           error=error
+                           )
 
     def get(self):
         self.render_new_post()
@@ -222,7 +234,7 @@ class PermalinkHandler(Handler):
 
     def get(self, blog_id):
         blog = Blog.get_by_id(int(blog_id))
-        self.render("permalink.html", blog=blog)
+        self.render_secure("permalink.html", blog=blog)
 
 
 class MainHandler(Handler):
@@ -249,13 +261,9 @@ class AsciiHandler(Handler):
                            "ORDER BY created DESC "
                            "LIMIT 10")
         arts = list(arts)
-        coordinates = filter(None, (a.coords for a in arts))
-        img_url = None
-        if coordinates:
-            img_url = geo.gmaps_img(coordinates)
 
-        self.render("ascii.html", title=title, art=art, error=error, arts=arts,
-                    img_url=img_url)
+        self.render_secure("ascii.html", title=title, art=art, error=error,
+                           arts=arts)
 
     def get(self):
         # self.write(repr(get_coords(self.request.remote_addr)))
@@ -267,9 +275,6 @@ class AsciiHandler(Handler):
 
         if title and art:
             new_art = Art(title=title, art=art)
-            coords = geo.get_coords(self.request.remote_addr)
-            if coords:
-                new_art.coords = coords
             new_art.put()
             self.redirect("/ascii")
         else:
