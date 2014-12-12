@@ -13,10 +13,11 @@
 {% for blog in blog_posts %}
     <tr>
         <td><a href="{{"/blog/"}}{{blog.key().id()}}">{{blog.subject}}</a></td>
-        <td>{{blog.created}}</a></td>
+        <td>{{blog.created | datetime }}</a></td>
     </tr>
 {% endfor %}
 </table>    
-
-
+<div style="position:absolute;bottom:5px;right:5px;margin:0;padding:5px 3px;">
+    Queried {{cache_age}} seconds ago
+</div>
 {% endblock %}

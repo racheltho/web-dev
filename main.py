@@ -1,20 +1,35 @@
-import webapp2
 import jinja2
-import os
-from google.appengine.ext import db
 import json
+import os
+import webapp2
 
+from google.appengine.api import memcache
+from google.appengine.ext import db
+
+import geo
+import hashing
 from models import (Art,
                     Blog,
                     User)
+from repositories import (UserRepository,
+                          BlogRepository)
 import validation
-import hashing
-import geo
 
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
+
+
+def format_datetime(datetime):
+    return datetime.strftime("%c")
+
+
+def allow_linebreaks(content):
+    return content.replace("\n", "<br>")
+
+jinja_env.filters['datetime'] = format_datetime
+jinja_env.filters['linebreaks'] = allow_linebreaks
 
 
 class Handler(webapp2.RequestHandler):
@@ -57,7 +72,7 @@ class SignupHandler(Handler):
         verify = self.request.get('verify')
         email = self.request.get('email')
 
-        new_username = User.username_not_taken(username)
+        new_username = UserRepository.username_not_taken(username)
         valid_username = validation.valid_username(username)
         valid_password = validation.valid_password(password)
         valid_verify = (verify == password)
@@ -127,7 +142,7 @@ class LoginHandler(Handler):
         username = self.request.get('username')
         password = self.request.get('password')
 
-        user_id = User.user_id_from_username_password(username, password)
+        user_id = UserRepository.user_id_from_username_password(username, password)
 
         kwargs['username'] = username
 
@@ -174,12 +189,20 @@ class WelcomeHandler(Handler):
             self.redirect("/blog/login")
 
 
+class FlushCacheHandler(Handler):
+
+    def get(self):
+        memcache.flush_all()
+        self.redirect('/blog')
+
+
 class BlogMainHandler(Handler):
 
     def render_blog_main_page(self):
-        blog_posts = db.GqlQuery("SELECT * FROM Blog "
-                                 "ORDER BY created DESC")
-        self.render_secure("blog.html", blog_posts=blog_posts)
+        blog_posts, cache_age = BlogRepository.get_blog_posts()
+        self.render("blog.html",
+                    blog_posts=blog_posts,
+                    cache_age=cache_age)
 
     def get(self):
         self.render_blog_main_page()
@@ -189,9 +212,7 @@ class BlogJSONHandler(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'application/json'
-        blog_posts = db.GqlQuery("SELECT * FROM Blog "
-                                 "ORDER BY created DESC")
-        blog_posts = list(blog_posts)
+        blog_posts, cache_age = BlogRepository.get_blog_posts()
         blog_json = [Blog.get_json(b) for b in blog_posts]
         self.write(json.dumps(blog_json))
 
@@ -208,11 +229,11 @@ class PermalinkJSONHandler(Handler):
 class NewPostHandler(Handler):
 
     def render_new_post(self, subject="", content="", error=""):
-        self.render_secure("newpost.html",
-                           subject=subject,
-                           content=content,
-                           error=error
-                           )
+        self.render("newpost.html",
+                    subject=subject,
+                    content=content,
+                    error=error
+                    )
 
     def get(self):
         self.render_new_post()
@@ -223,7 +244,7 @@ class NewPostHandler(Handler):
 
         if subject and content:
             new_blog_post = Blog(subject=subject, content=content)
-            new_blog_post.put()
+            BlogRepository.put(new_blog_post)
             self.redirect("/blog/"+str(new_blog_post.key().id()))
         else:
             error = "we need both a subject and content!"
@@ -233,8 +254,8 @@ class NewPostHandler(Handler):
 class PermalinkHandler(Handler):
 
     def get(self, blog_id):
-        blog = Blog.get_by_id(int(blog_id))
-        self.render_secure("permalink.html", blog=blog)
+        blog, cache_age = BlogRepository.get_blog_by_id(blog_id)
+        self.render("permalink.html", blog=blog, cache_age=cache_age)
 
 
 class MainHandler(Handler):
@@ -262,8 +283,8 @@ class AsciiHandler(Handler):
                            "LIMIT 10")
         arts = list(arts)
 
-        self.render_secure("ascii.html", title=title, art=art, error=error,
-                           arts=arts)
+        self.render("ascii.html", title=title, art=art, error=error,
+                    arts=arts)
 
     def get(self):
         # self.write(repr(get_coords(self.request.remote_addr)))
@@ -287,6 +308,7 @@ app = webapp2.WSGIApplication([('/blog/?', BlogMainHandler),
                               ('/blog/(\d+)', PermalinkHandler),
                               ('/blog/(\d+)/?\.json', PermalinkJSONHandler),
                               ('/blog/?\.json', BlogJSONHandler),
+                              ('/blog/flush/?', FlushCacheHandler),
                               ('/', MainHandler),
                               ('/ascii', AsciiHandler),
                               ('/blog/signup', SignupHandler),

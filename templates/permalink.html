@@ -2,8 +2,11 @@
 {% block content %}
 
 <h1>{{blog.subject}}</h1>
-{{blog.created}}
+{{blog.created | datetime}}
 <hr>
-{{blog.content}}
+{{blog.content | linebreaks | safe}}
 
+<div style="position:absolute;bottom:5px;right:5px;margin:0;padding:5px 3px;">
+    Queried {{cache_age}} seconds ago
+</div>
 {% endblock %}

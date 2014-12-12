@@ -10,7 +10,7 @@
     </div>
     <div class="form-group">
         <label>Art</label>
-        <textarea class="form-control" name="art" rows="10" id="title">{{art}}</textarea>
+        <textarea class="form-control" style="font-family:monospace;" name="art" rows="10" id="title">{{art}}</textarea>
     </div>
     {% if error %}
     <div class="form-group has-error"><span class="help-block">{{error}}</span></div>
@@ -18,11 +18,13 @@
     <button type="submit" class="btn btn-default">Submit</button>
 </form>
 <hr>
+<table>
 {% for art in arts %}
-<div class="art">
-    <div class="art-title">{{art.title}}</div>
-    <pre class="art-body">{{art.art}}</div></pre>
-</div>
+<tr><td>
+    <div>{{art.title}}</div>
+    <pre>{{art.art}}</pre>
+    </td>
+<tr>
 {% endfor %}
-
+</table>
 {% endblock %}
