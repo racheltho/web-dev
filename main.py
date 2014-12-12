@@ -52,9 +52,9 @@ class Handler(webapp2.RequestHandler):
             if hashed_user_id and hashing.check_secure_val(hashed_user_id):
                 self.write(self.render_str(template, **kwargs))
             else:
-                self.redirect("/blog/login")
+                self.redirect("/login")
         except ValueError:
-            self.redirect("/blog/login")
+            self.redirect("/login")
 
 
 class SignupHandler(Handler):
@@ -126,7 +126,7 @@ class SignupHandler(Handler):
             self.response.headers.add_header('Set-Cookie',
                                              'user_id={}; '
                                              'Path=/'.format(hashed_cookie))
-            self.redirect("/blog/welcome")
+            self.redirect("/")
 
 
 class LoginHandler(Handler):
@@ -155,14 +155,14 @@ class LoginHandler(Handler):
             self.response.headers.add_header('Set-Cookie',
                                              'user_id={}; '
                                              'Path=/'.format(hashed_cookie))
-            self.redirect("/blog/welcome")
+            self.redirect("/")
 
 
 class LogoutHandler(Handler):
 
     def get(self):
         self.response.delete_cookie('user_id')
-        self.redirect('/blog/login')
+        self.redirect('/login')
 
 
 class WelcomeHandler(Handler):
@@ -180,13 +180,13 @@ class WelcomeHandler(Handler):
                 img_url = None
                 if coordinates:
                     img_url = geo.gmaps_img(coordinates)
-
                 self.render("welcome.html", username=user.username,
                             img_url=img_url)
-            except TypeError:
-                self.redirect("/blog/login")
+            except (TypeError,
+                    AttributeError):
+                self.redirect("/login")
         else:
-            self.redirect("/blog/login")
+            self.redirect("/login")
 
 
 class FlushCacheHandler(Handler):
@@ -309,11 +309,10 @@ app = webapp2.WSGIApplication([('/blog/?', BlogMainHandler),
                               ('/blog/(\d+)/?\.json', PermalinkJSONHandler),
                               ('/blog/?\.json', BlogJSONHandler),
                               ('/blog/flush/?', FlushCacheHandler),
-                              ('/', MainHandler),
                               ('/ascii', AsciiHandler),
-                              ('/blog/signup', SignupHandler),
-                              ('/blog/login', LoginHandler),
-                              ('/blog/logout', LogoutHandler),
-                              ('/blog/welcome', WelcomeHandler)],
+                              ('/signup', SignupHandler),
+                              ('/login', LoginHandler),
+                              ('/logout', LogoutHandler),
+                              ('/', WelcomeHandler)],
                               debug=True
                               )

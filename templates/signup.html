@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h3>New users:</h3>
-<form class="form-horizontal" method="post" action="/blog/signup" role="form">
+<form class="form-horizontal" method="post" action="/signup" role="form">
     {% if username_error or username_exists %} 
     <div class="form-group has-error">
     {% else %}
@@ -54,7 +54,7 @@
 </form>
 <hr>
 <h3>Returning users:</h3>
-<form action="/blog/login">
+<form action="/login">
     <div class="form-group">
          <div class="col-sm-offset-2 col-sm-4">
             <button class="btn btn-default">Login</button>

@@ -46,7 +46,7 @@ from models import (User,
 class SignUpTest(unittest.TestCase):
 
     def setUp(self):
-        app = webapp2.WSGIApplication([('/blog/signup', SignupHandler)])
+        app = webapp2.WSGIApplication([('/signup', SignupHandler)])
         self.testapp = webtest.TestApp(app)
         self.testbed = testbed.Testbed()
         self.testbed.activate()
@@ -62,6 +62,6 @@ class SignUpTest(unittest.TestCase):
                   'verify': '123',
                   'email': 'r@t.com',
                   }
-        response = self.testapp.post('/blog/signup', params)
+        response = self.testapp.post('/signup', params)
         assert response.status_code == 302
-        assert response.location == 'http://localhost/blog/welcome'
+        assert response.location == 'http://localhost/'
