@@ -8,7 +8,7 @@ from geo import (get_coords,
 class TestGeo(unittest.TestCase):
     def test_get_coords(self):
         ip = "203.26.235.14"
-        assert get_coords(ip) == db.GeoPt(-37.824, 144.973)
+        assert get_coords(ip) == db.GeoPt(-37.8139, 144.9634)
 
     def test_gmaps_img(self):
         test_points = [db.GeoPt(1, 2), db.GeoPt(3,4)]

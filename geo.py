@@ -5,7 +5,7 @@ from xml.dom import minidom
 from google.appengine.ext import db
 
 
-IP_URL = "https://freegeoip.net/xml/"
+IP_URL = "http://ip-api.com/xml/"
 GMAPS_URL = "http://maps.googleapis.com/maps/api/staticmap?size=380x263&sensor=false&"
 
 
@@ -29,8 +29,8 @@ def get_coords(ip):
         return
     if content:
         xml = minidom.parseString(content)
-        xml_lat = xml.getElementsByTagName("Latitude")
-        xml_lon = xml.getElementsByTagName("Longitude")
+        xml_lat = xml.getElementsByTagName("lat")
+        xml_lon = xml.getElementsByTagName("lon")
         if xml_lat and xml_lon:
             lat = xml_lat[0].childNodes[0].nodeValue
             lon = xml_lon[0].childNodes[0].nodeValue
