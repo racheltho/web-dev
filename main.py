@@ -142,7 +142,8 @@ class LoginHandler(Handler):
         username = self.request.get('username')
         password = self.request.get('password')
 
-        user_id = UserRepository.user_id_from_username_password(username, password)
+        user_id = UserRepository.user_id_from_username_password(username,
+                                                                password)
 
         kwargs['username'] = username
 
@@ -180,8 +181,8 @@ class WelcomeHandler(Handler):
                 img_url = None
                 if coordinates:
                     img_url = geo.gmaps_img(coordinates)
-                self.render("welcome.html", username=user.username,
-                            img_url=img_url)
+                self.render_secure("welcome.html", username=user.username,
+                                   img_url=img_url)
             except (TypeError,
                     AttributeError):
                 self.redirect("/login")
@@ -200,9 +201,9 @@ class BlogMainHandler(Handler):
 
     def render_blog_main_page(self):
         blog_posts, cache_age = BlogRepository.get_blog_posts()
-        self.render("blog.html",
-                    blog_posts=blog_posts,
-                    cache_age=cache_age)
+        self.render_secure("blog.html",
+                           blog_posts=blog_posts,
+                           cache_age=cache_age)
 
     def get(self):
         self.render_blog_main_page()
@@ -229,11 +230,11 @@ class PermalinkJSONHandler(Handler):
 class NewPostHandler(Handler):
 
     def render_new_post(self, subject="", content="", error=""):
-        self.render("newpost.html",
-                    subject=subject,
-                    content=content,
-                    error=error
-                    )
+        self.render_secure("newpost.html",
+                           subject=subject,
+                           content=content,
+                           error=error
+                           )
 
     def get(self):
         self.render_new_post()
@@ -255,7 +256,7 @@ class PermalinkHandler(Handler):
 
     def get(self, blog_id):
         blog, cache_age = BlogRepository.get_blog_by_id(blog_id)
-        self.render("permalink.html", blog=blog, cache_age=cache_age)
+        self.render_secure("permalink.html", blog=blog, cache_age=cache_age)
 
 
 class MainHandler(Handler):
@@ -283,8 +284,8 @@ class AsciiHandler(Handler):
                            "LIMIT 10")
         arts = list(arts)
 
-        self.render("ascii.html", title=title, art=art, error=error,
-                    arts=arts)
+        self.render_secure("ascii.html", title=title, art=art, error=error,
+                           arts=arts)
 
     def get(self):
         # self.write(repr(get_coords(self.request.remote_addr)))
