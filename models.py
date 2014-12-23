@@ -20,6 +20,13 @@ class Blog(db.Model):
         return blog_json
 
 
+class ResetToken(db.Model):
+    username = db.StringProperty(required=True)
+    time_created = db.DateTimeProperty(required=True)
+    name_time_hash = db.StringProperty(required=True)
+    active = db.BooleanProperty(required=True, default=True)
+
+
 class User(db.Model):
     username = db.StringProperty(required=True)
     password_hash_salt = db.StringProperty(required=True)

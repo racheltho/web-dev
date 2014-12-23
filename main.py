@@ -3,7 +3,8 @@ import json
 import os
 import webapp2
 
-from google.appengine.api import memcache
+from google.appengine.api import (memcache,
+                                  mail)
 from google.appengine.ext import db
 
 import geo
@@ -131,6 +132,34 @@ class SignupHandler(Handler):
 
 class LoginHandler(Handler):
 
+    def send_email(self, username, reset_token):
+
+        email = self.request.get("email")
+        sender_mail = "created-by-rachel@appspot.gserviceaccount.com"
+        message = mail.EmailMessage(sender="Rachel's App Support <{}>".
+                                           format(sender_mail),
+                                    subject="Rachel is pretty cool")
+        message.to = "Rachel Thomas <{}>".format(email)
+        message.body = """
+        Dear {name}:
+
+        We are delighted to reset your password for you.  Please follow
+        this link within the next 12 hours:
+
+        {link}
+
+        Thank you for your continued usage of our popular service.
+
+        *** This is an automatically generated email, please do not reply
+        to this message ***
+
+        Warmest Regards,
+        The 1-person team at created-by-Rachel
+
+        """.format(name=username, link="http://localhost:8080/reset")
+
+        message.send()
+
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
         self.render("login.html")
@@ -141,22 +170,33 @@ class LoginHandler(Handler):
 
         username = self.request.get('username')
         password = self.request.get('password')
-
-        user_id = UserRepository.user_id_from_username_password(username,
-                                                                password)
+        login = self.request.get('login')
+        reset = self.request.get('reset')
 
         kwargs['username'] = username
 
-        if not user_id:
-            kwargs['invalid'] = "Invalid Login"
-            self.render("login.html", **kwargs)
-        else:
-            # create cookie useing hashed id
-            hashed_cookie = hashing.make_secure_val(user_id)
-            self.response.headers.add_header('Set-Cookie',
-                                             'user_id={}; '
-                                             'Path=/'.format(hashed_cookie))
-            self.redirect("/")
+        if reset:
+            email = UserRepository.email_from_username(username)
+            if email:
+                reset_token = hashing.generate_reset(username)
+                self.send_email(username, reset_token)
+            else:
+                kwargs["invalid username"]
+            self.render("reset.html", **kwargs)
+
+        elif login:
+            user_id = UserRepository.user_id_from_username_password(username,
+                                                                    password)
+            if not user_id:
+                kwargs['invalid'] = "Invalid Login"
+                self.render("login.html", **kwargs)
+            else:
+                # create cookie useing hashed id
+                hashed_cookie = hashing.make_secure_val(user_id)
+                self.response.headers.add_header('Set-Cookie',
+                                                 'user_id={}; '
+                                                 'Path=/'.format(hashed_cookie))
+                self.redirect("/")
 
 
 class LogoutHandler(Handler):
@@ -314,6 +354,7 @@ app = webapp2.WSGIApplication([('/blog/?', BlogMainHandler),
                               ('/signup', SignupHandler),
                               ('/login', LoginHandler),
                               ('/logout', LogoutHandler),
+                              ('/email', EmailHandler),
                               ('/', WelcomeHandler)],
                               debug=True
                               )

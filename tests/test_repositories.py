@@ -1,5 +1,4 @@
 import time
-from datetime import datetime
 import unittest
 from google.appengine.ext import testbed
 
@@ -28,8 +27,18 @@ class UserTestCase(unittest.TestCase):
         assert UserRepository.username_not_taken(username)
         user.put()
         assert not UserRepository.username_not_taken(username)
-        user_id = UserRepository.user_id_from_username_password(username, password)
+        user_id = UserRepository.user_id_from_username_password(username,
+                                                                password)
         assert user_id == user.key().id()
+
+    def test_email_from_username(self):
+        username = "test_user"
+        password = "test"
+        email = "test@test.com"
+        pw_hash = make_pw_hash(username, password)
+        user = User(username=username, password_hash_salt=pw_hash, email=email)
+        user.put()
+        assert UserRepository.email_from_username(username) == email
 
 
 class BlogTestCase(unittest.TestCase):
