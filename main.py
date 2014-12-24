@@ -9,6 +9,7 @@ from google.appengine.ext import db
 
 import geo
 import hashing
+from utils import is_development_env
 from models import (Art,
                     Blog,
                     User)
@@ -132,9 +133,13 @@ class SignupHandler(Handler):
 
 class LoginHandler(Handler):
 
-    def send_email(self, username, reset_token):
+    def send_email(self, username, email, reset_token):
 
-        email = self.request.get("email")
+        if is_development_env():
+            base_url = "http://localhost:8080/reset/"
+        else:
+            base_url = "http://created-by-rachel.appspot.com/reset"
+        url = base_url + reset_token
         sender_mail = "created-by-rachel@appspot.gserviceaccount.com"
         message = mail.EmailMessage(sender="Rachel's App Support <{}>".
                                            format(sender_mail),
@@ -156,7 +161,7 @@ class LoginHandler(Handler):
         Warmest Regards,
         The 1-person team at created-by-Rachel
 
-        """.format(name=username, link="http://localhost:8080/reset")
+        """.format(name=username, link=url)
 
         message.send()
 
@@ -170,21 +175,19 @@ class LoginHandler(Handler):
 
         username = self.request.get('username')
         password = self.request.get('password')
-        login = self.request.get('login')
-        reset = self.request.get('reset')
+        action = self.request.get('action')
 
         kwargs['username'] = username
-
-        if reset:
+        if action == "Reset Password":
             email = UserRepository.email_from_username(username)
             if email:
                 reset_token = hashing.generate_reset(username)
-                self.send_email(username, reset_token)
+                self.send_email(username, email, reset_token)
             else:
-                kwargs["invalid username"]
-            self.render("reset.html", **kwargs)
+                kwargs["invalid_username"] = True
+            self.render("reset_message.html", **kwargs)
 
-        elif login:
+        elif action == "Login":
             user_id = UserRepository.user_id_from_username_password(username,
                                                                     password)
             if not user_id:
@@ -192,11 +195,17 @@ class LoginHandler(Handler):
                 self.render("login.html", **kwargs)
             else:
                 # create cookie useing hashed id
-                hashed_cookie = hashing.make_secure_val(user_id)
+                cookie = hashing.make_secure_val(user_id)
                 self.response.headers.add_header('Set-Cookie',
                                                  'user_id={}; '
-                                                 'Path=/'.format(hashed_cookie))
+                                                 'Path=/'.format(cookie))
                 self.redirect("/")
+
+
+class ResetHandler(Handler):
+
+    def get(self, token):
+        self.render("reset_password.html", token=token)
 
 
 class LogoutHandler(Handler):
@@ -350,11 +359,11 @@ app = webapp2.WSGIApplication([('/blog/?', BlogMainHandler),
                               ('/blog/(\d+)/?\.json', PermalinkJSONHandler),
                               ('/blog/?\.json', BlogJSONHandler),
                               ('/blog/flush/?', FlushCacheHandler),
+                              ('/reset/(\w+)', ResetHandler),
                               ('/ascii', AsciiHandler),
                               ('/signup', SignupHandler),
                               ('/login', LoginHandler),
                               ('/logout', LogoutHandler),
-                              ('/email', EmailHandler),
                               ('/', WelcomeHandler)],
                               debug=True
                               )

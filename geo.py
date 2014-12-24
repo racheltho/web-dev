@@ -1,19 +1,13 @@
 import urllib2
 import httplib
-import os
 from xml.dom import minidom
 from google.appengine.ext import db
+from utils import is_development_env
 
 
 IP_URL = "http://ip-api.com/xml/"
-GMAPS_URL = "http://maps.googleapis.com/maps/api/staticmap?size=380x263&sensor=false&"
-
-
-def is_development_env():
-    try:
-        return os.environ['SERVER_SOFTWARE'].startswith('Development')
-    except KeyError:
-        pass
+GMAPS_URL = ("http://maps.googleapis.com/maps/api/"
+             "staticmap?size=380x263&sensor=false&")
 
 
 def get_coords(ip):

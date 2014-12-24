@@ -1,0 +1,30 @@
+{% extends "base_nav.html" %}
+{% block content %}
+
+<h1>Password Reset Page</h1>
+<hr>
+{% if invalid_username %}
+Invalid username or no email on file.  We are not able to reset your password.  Please
+try re-entering your information or create a new account.
+<br>
+<form action="/signup">
+    <div class="form-group">
+        <div class="col-sm-1">
+            <button class="btn btn-default">Sign up</button>
+        </div>
+    </div>
+</form>
+<form action="/login">
+    <div class="form-group">
+         <div class="col-sm-1">
+            <button class="btn btn-default">Login</button>
+        </div>
+    </div>
+</form>
+{% else %}
+An email has been sent to you with a link to reset your password.
+{% endif %}
+<br>
+<hr>
+
+{% endblock %}
