@@ -21,6 +21,14 @@ def age_get(key):
     return value, age
 
 
+class TokenRepository():
+    @classmethod
+    def token_from_hash(cls, hash_str):
+        reset_token = db.GqlQuery("SELECT * FROM ResetToken WHERE "
+                                  "name_time_hash = '{}'".format(hash_str))
+        return reset_token.get()
+
+
 class UserRepository():
     @classmethod
     def user_id_from_username_password(cls, username, password):
@@ -37,6 +45,12 @@ class UserRepository():
                            "WHERE username = '{}'".format(username)).get()
         if user:
             return user.email
+
+    @classmethod
+    def user_from_username(cls, username):
+        query = db.GqlQuery("SELECT * FROM User "
+                            "WHERE username = '{}'".format(username))
+        return query.get()
 
     @classmethod
     def username_not_taken(cls, username):

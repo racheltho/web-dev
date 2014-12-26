@@ -4,7 +4,6 @@ import string
 import hashlib
 import hmac
 from secret import SECRET
-from models import ResetToken
 
 
 # functions for hashing cookies
@@ -40,13 +39,3 @@ def valid_pw(name, pw, h):
     salt = h.split('|')[1]
     if h == make_pw_hash(name, pw, salt):
         return True
-
-
-def generate_reset(name):
-    time = datetime.now()
-    h = hashlib.sha256(name + time.strftime("%c")).hexdigest()
-    token = ResetToken(username=name,
-                       time_created=time,
-                       name_time_hash=h)
-    token.put()
-    return h

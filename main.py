@@ -2,6 +2,8 @@ import jinja2
 import json
 import os
 import webapp2
+import hashlib
+from datetime import datetime
 
 from google.appengine.api import (memcache,
                                   mail)
@@ -12,8 +14,10 @@ import hashing
 from utils import is_development_env
 from models import (Art,
                     Blog,
+                    ResetToken,
                     User)
 from repositories import (UserRepository,
+                          TokenRepository,
                           BlogRepository)
 import validation
 
@@ -133,17 +137,18 @@ class SignupHandler(Handler):
 
 class LoginHandler(Handler):
 
-    def send_email(self, username, email, reset_token):
+    def send_email(self, username, email, reset_hash):
 
         if is_development_env():
             base_url = "http://localhost:8080/reset/"
         else:
             base_url = "http://created-by-rachel.appspot.com/reset"
-        url = base_url + reset_token
+        url = base_url + reset_hash
         sender_mail = "created-by-rachel@appspot.gserviceaccount.com"
         message = mail.EmailMessage(sender="Rachel's App Support <{}>".
                                            format(sender_mail),
-                                    subject="Rachel is pretty cool")
+                                    subject="Password Reset for {}".
+                                            format(username))
         message.to = "Rachel Thomas <{}>".format(email)
         message.body = """
         Dear {name}:
@@ -159,7 +164,7 @@ class LoginHandler(Handler):
         to this message ***
 
         Warmest Regards,
-        The 1-person team at created-by-Rachel
+        The 1-person team at created-by-rachel
 
         """.format(name=username, link=url)
 
@@ -181,8 +186,15 @@ class LoginHandler(Handler):
         if action == "Reset Password":
             email = UserRepository.email_from_username(username)
             if email:
-                reset_token = hashing.generate_reset(username)
-                self.send_email(username, email, reset_token)
+                time_created = datetime.now()
+                hash_str = username + time_created.strftime("%c")
+                name_time_hash = hashlib.sha256(hash_str).hexdigest()
+                reset_token = ResetToken(username=username,
+                                         time_created=time_created,
+                                         name_time_hash=name_time_hash,
+                                         active=True)
+                reset_token.put()
+                self.send_email(username, email, name_time_hash)
             else:
                 kwargs["invalid_username"] = True
             self.render("reset_message.html", **kwargs)
@@ -204,8 +216,55 @@ class LoginHandler(Handler):
 
 class ResetHandler(Handler):
 
-    def get(self, token):
-        self.render("reset_password.html", token=token)
+    def get(self, reset_hash):
+        self.response.headers['Content-Type'] = 'text/html'
+        self.render("reset_password.html", reset_hash=reset_hash)
+
+    def post(self, reset_hash):
+
+        kwargs = {}
+
+        password = self.request.get('password')
+        verify = self.request.get('verify')
+        reset_token = TokenRepository.token_from_hash(reset_hash)
+        if reset_token and reset_token.is_valid():
+            username = reset_token.username
+            user = UserRepository.user_from_username(username)
+
+            valid_password = validation.valid_password(password)
+            valid_verify = (verify == password)
+
+            if not valid_password:
+                kwargs['password_error'] = "That wasn't a valid password"
+            if not valid_verify:
+                kwargs['verify_error'] = "Your passwords didn't match"
+
+            error_dict = {'password_error',
+                          'verify_error',
+                          }
+
+            # check if any error messages are in kwargs
+            if error_dict & set(kwargs.keys()) != set():
+                kwargs['reset_hash'] = reset_hash
+                self.render("reset_password.html", **kwargs)
+            else:
+                # set ResetToken to inactive now that it's been used
+                reset_token.set_used()
+                reset_token.put()
+                # salt and hash password
+                password_hash_salt = hashing.make_pw_hash(username, password)
+                # update user
+                user.password_hash_salt = password_hash_salt
+                n = user.put()
+                user_id = n.id()
+                # create cookie using hashed id
+                cookie = hashing.make_secure_val(user_id)
+                self.response.headers.add_header('Set-Cookie',
+                                                 'user_id={}; '
+                                                 'Path=/'.format(cookie))
+                self.redirect("/")
+        else:
+            self.redirect('/login')
 
 
 class LogoutHandler(Handler):

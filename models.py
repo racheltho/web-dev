@@ -1,4 +1,6 @@
 from google.appengine.ext import db
+from datetime import (datetime,
+                      timedelta)
 
 
 class Art(db.Model):
@@ -25,6 +27,15 @@ class ResetToken(db.Model):
     time_created = db.DateTimeProperty(required=True)
     name_time_hash = db.StringProperty(required=True)
     active = db.BooleanProperty(required=True, default=True)
+
+    def is_valid(self):
+        time_limit = timedelta(hours=12)
+        now = datetime.now()
+        if self.active and (now - self.time_created <= time_limit):
+            return True
+
+    def set_used(self):
+        self.active = False
 
 
 class User(db.Model):

@@ -1,12 +1,40 @@
+from datetime import datetime
 import time
 import unittest
 from google.appengine.ext import testbed
 
 from hashing import make_pw_hash
 from repositories import (BlogRepository,
+                          TokenRepository,
                           UserRepository)
 from models import (Blog,
+                    ResetToken,
                     User)
+
+
+class TokenRepositoryTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+
+    def teardown(self):
+        self.testbed.deactivate()
+
+    def test_get_username(self):
+        username = "test_user"
+        name_time_hash = "test"
+        time_created = datetime.now()
+        token = ResetToken(username=username,
+                           time_created=time_created,
+                           name_time_hash=name_time_hash,
+                           active=True)
+        token.put()
+        token2 = TokenRepository.token_from_hash(name_time_hash)
+        assert token.username == token2.username
+        assert token.time_created == token2.time_created
+        assert token.name_time_hash == token2.name_time_hash
 
 
 class UserTestCase(unittest.TestCase):
