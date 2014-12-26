@@ -172,7 +172,8 @@ class LoginHandler(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        self.render("login.html")
+        invalid_reset = self.request.get('invalid_reset')
+        self.render("login.html", invalid_reset=invalid_reset)
 
     def post(self):
 
@@ -218,7 +219,11 @@ class ResetHandler(Handler):
 
     def get(self, reset_hash):
         self.response.headers['Content-Type'] = 'text/html'
-        self.render("reset_password.html", reset_hash=reset_hash)
+        reset_token = TokenRepository.token_from_hash(reset_hash)
+        if reset_token and reset_token.is_valid():
+            self.render("reset_password.html", reset_hash=reset_hash)
+        else:
+            self.redirect("/login?invalid_reset=true")
 
     def post(self, reset_hash):
 
@@ -264,7 +269,7 @@ class ResetHandler(Handler):
                                                  'Path=/'.format(cookie))
                 self.redirect("/")
         else:
-            self.redirect('/login')
+            self.redirect('/login?invalid_reset=True')
 
 
 class LogoutHandler(Handler):
