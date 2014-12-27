@@ -142,9 +142,9 @@ class LoginHandler(Handler):
         if is_development_env():
             base_url = "http://localhost:8080/reset/"
         else:
-            base_url = "http://created-by-rachel.appspot.com/reset"
+            base_url = "http://created-by-rachel.appspot.com/reset/"
         url = base_url + reset_hash
-        sender_mail = "created-by-rachel@appspot.gserviceaccount.com"
+        sender_mail = "admin@created-by-rachel.appspotmail.com"
         message = mail.EmailMessage(sender="Rachel's App Support <{}>".
                                            format(sender_mail),
                                     subject="Password Reset for {}".
