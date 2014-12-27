@@ -14,3 +14,7 @@ Nifty features include:
 - users' ip addresses are used to look up geographic coordinates to plot on a map
 - responsive navigation bar
 - queries from the database are cached with memcache
+- password reset sends email with a link to reset password, link expires after 12 hours or after it is used once
+
+To Do:
+- allow incoming email
