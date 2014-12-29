@@ -67,6 +67,7 @@ class UserTestCase(unittest.TestCase):
         user = User(username=username, password_hash_salt=pw_hash, email=email)
         user.put()
         assert UserRepository.email_from_username(username) == email
+        assert UserRepository.username_from_email(email) == username
 
 
 class BlogTestCase(unittest.TestCase):

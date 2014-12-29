@@ -137,6 +137,35 @@ class SignupHandler(Handler):
 
 class LoginHandler(Handler):
 
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        invalid_reset = self.request.get('invalid_reset')
+        self.render("login.html", invalid_reset=invalid_reset)
+
+    def post(self):
+
+        kwargs = {}
+
+        username = self.request.get('username')
+        password = self.request.get('password')
+
+        kwargs['username'] = username
+        user_id = UserRepository.user_id_from_username_password(username,
+                                                                password)
+        if not user_id:
+            kwargs['invalid'] = "Invalid Login"
+            self.render("login.html", **kwargs)
+        else:
+            # create cookie useing hashed id
+            cookie = hashing.make_secure_val(user_id)
+            self.response.headers.add_header('Set-Cookie',
+                                             'user_id={}; '
+                                             'Path=/'.format(cookie))
+            self.redirect("/")
+
+
+class ResetHandler(Handler):
+
     def send_email(self, username, email, reset_hash):
 
         if is_development_env():
@@ -172,21 +201,28 @@ class LoginHandler(Handler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        invalid_reset = self.request.get('invalid_reset')
-        self.render("login.html", invalid_reset=invalid_reset)
+        invalid = self.request.get('invalid')
+        self.render("reset.html", invalid=invalid)
 
     def post(self):
 
         kwargs = {}
 
-        username = self.request.get('username')
-        password = self.request.get('password')
-        action = self.request.get('action')
+        entry = self.request.get('entry')
+        kwargs['entry'] = entry
 
-        kwargs['username'] = username
-        if action == "Reset Password":
-            email = UserRepository.email_from_username(username)
-            if email:
+        if entry:
+            response = UserRepository.email_from_username(entry)
+            if response:
+                username = entry
+                email = response
+            else:
+                response = UserRepository.username_from_email(entry)
+                if response:
+                    username = response
+                    email = entry
+
+            if response:
                 time_created = datetime.now()
                 hash_str = username + time_created.strftime("%c")
                 name_time_hash = hashlib.sha256(hash_str).hexdigest()
@@ -197,25 +233,13 @@ class LoginHandler(Handler):
                 reset_token.put()
                 self.send_email(username, email, name_time_hash)
             else:
-                kwargs["invalid_username"] = True
-            self.render("reset_message.html", **kwargs)
-
-        elif action == "Login":
-            user_id = UserRepository.user_id_from_username_password(username,
-                                                                    password)
-            if not user_id:
-                kwargs['invalid'] = "Invalid Login"
-                self.render("login.html", **kwargs)
-            else:
-                # create cookie useing hashed id
-                cookie = hashing.make_secure_val(user_id)
-                self.response.headers.add_header('Set-Cookie',
-                                                 'user_id={}; '
-                                                 'Path=/'.format(cookie))
-                self.redirect("/")
+                    kwargs["invalid"] = "That is not a valid username or email"
+        else:
+            kwargs["invalid"] = "You must enter a username or email"
+        self.render("reset_message.html", **kwargs)
 
 
-class ResetHandler(Handler):
+class ResetLinkHandler(Handler):
 
     def get(self, reset_hash):
         self.response.headers['Content-Type'] = 'text/html'
@@ -423,7 +447,8 @@ app = webapp2.WSGIApplication([('/blog/?', BlogMainHandler),
                               ('/blog/(\d+)/?\.json', PermalinkJSONHandler),
                               ('/blog/?\.json', BlogJSONHandler),
                               ('/blog/flush/?', FlushCacheHandler),
-                              ('/reset/(\w+)', ResetHandler),
+                              ('/reset/(\w+)', ResetLinkHandler),
+                              ('/reset', ResetHandler),
                               ('/ascii', AsciiHandler),
                               ('/signup', SignupHandler),
                               ('/login', LoginHandler),

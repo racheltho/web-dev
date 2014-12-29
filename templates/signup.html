@@ -47,18 +47,14 @@
         <span class="help-block">{{email_error}}</span>
     </div>
     <div class="form-group">
-         <div class="col-sm-offset-2 col-sm-4">
+         <div class="col-sm-offset-3 col-sm-4">
          <button type="submit" class="btn btn-default">Sign up</button>
          </div> 
+     </div>
+ </form>
+ <br><br><br>
+    <div class="col-sm-offset-3 col-sm-4">
+        <h4>Returning users: <a href="/login">login</a> or <a href="/reset">reset password</a></h4><br>
     </div>
-</form>
 <hr>
-<h3>Returning users:</h3>
-<form action="/login">
-    <div class="form-group">
-         <div class="col-sm-offset-2 col-sm-4">
-            <button class="btn btn-default">Login</button>
-        </div>
-    </div>
-</form>
 {% endblock %}

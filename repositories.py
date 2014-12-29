@@ -47,6 +47,13 @@ class UserRepository():
             return user.email
 
     @classmethod
+    def username_from_email(cls, email):
+        user = db.GqlQuery("SELECT * FROM User "
+                           "WHERE email = '{}'".format(email)).get()
+        if user:
+            return user.username
+
+    @classmethod
     def user_from_username(cls, username):
         query = db.GqlQuery("SELECT * FROM User "
                             "WHERE username = '{}'".format(username))

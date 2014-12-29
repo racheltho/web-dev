@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<hr>
+<h3> Reset password</h3>
+<form class="form-horizontal" method="post" action="/reset" role="form">
+    {% if invalid %}
+    <div class="form-group has-error">
+    {% else %}
+    <div class="form-group">
+    {% endif %}
+        <label class="col-sm-3 control-label" for="name">Enter username OR email:</label>
+        <div class="col-sm-4">
+            <input class="form-control" name="entry" id="name" value={{entry}}>
+        </div>
+        <span class="col-sm-offset-3 col-sm-4 help-block">{{invalid}}</span>
+    </div>
+    <div class="col-sm-offset-3 col-sm-4">
+        <button class="btn btn-default">Reset Password</button>
+    </div>
+</form>
+<br><br><br>
+<div class="col-sm-offset-3 col-sm-4">
+    <h4> <a href="/login">Login</a> or <a href="/signup">Sign Up</a></h4>
+</div>
+<br><hr>
+{% endblock %}

@@ -32,19 +32,13 @@ That reset link is invalid.  Perhaps it is too old or already has been used.</di
                 value="Login">
         </div>
         <br><br>
+    </div>
+    <div class="form-group">
         <div class="col-sm-offset-3 col-sm-4">
-            <input class="btn btn-default" type="submit" action="submit" name="action"
-                value="Reset Password">
+            <h5> <a href="/reset">Forgot password? </a></h5><br>
+            <h5> <a href="/signup">New user? Sign up</a></h5>
         </div>
     </div>
 </form>
 <hr>
-<h3>New users:</h3>
-<form action="/signup">
-<div class="form-group">
-    <div class="col-sm-offset-1 col-sm-4">
-        <button class="btn btn-default">Sign up</button>
-    </div>
-</div>
-</form>
 {% endblock %}
