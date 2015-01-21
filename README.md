@@ -16,5 +16,11 @@ Nifty features include:
 - queries from the database are cached with memcache
 - password reset sends email with a link to reset password, link expires after 12 hours or after it is used once
 
+To Run:
+appcfg.py --oauth2 -A created-by-rachel update app/
+
+To Test:
+dev_appserver.py app --enable_sendmail
+
 To Do:
 - allow incoming email
